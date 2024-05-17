@@ -35,7 +35,7 @@ We recommend to follow the following step-by-step algorithm for those who want t
 
 All the studies require you to adjust input and output paths to your computer if you uploaded repository. Specify part to repository (.../DTD-donation) correctly in each script. They should handle saving data automatically. 
 
-3) To reproduce Study 1, run
+3) To reproduce Study 1, run:
    
 3.1. .../DTD-donation/Study 1/Scripts/Analysis_script_1.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
 In the end, Save the resulting data as described in the script, as it will be needed for Study 2
@@ -44,7 +44,7 @@ In the end, Save the resulting data as described in the script, as it will be ne
    
 4.1. .../DTD-donation/Study 2/Scripts/Analysis_script_2.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
 
-Postprocessing is by default done in the end of presented scripts. As a result, outputing tables are saved and provided to the reader.  
+5) Postprocessing is by default done in the end of presented scripts. As a result, outputing tables are saved and provided to the reader.  
 
 
 
