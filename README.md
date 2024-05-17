@@ -26,8 +26,11 @@ We recommend to follow the following step-by-step algorithm for those who want t
 2) Run the scripts in the following order:
    
 2.1) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_corestudies.Rmd - this script inputs raw data from the LISS core studies and saves its recoded and processed version. 
+
 2.2) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_whatsappdat.Rmd  - this script inputs raw data from the WhatsApp data donation study and saves its recoded and processed version. 
+
 2.3) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_fulldata.Rmd - this script joins and cleans the data from 2 previously mentioned sripts. 
+
 2.4) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_DTD_preprocessing.Qmd - Needed for study 2. This script parses DDPs, saving actual number of contacts in the files available to reader.
 
 All the studies require you to adjust input and output paths to your computer if you uploaded repository. Specify part to repository (.../DTD-donation) correctly in each script. They should handle saving data automatically. 
