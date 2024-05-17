@@ -30,6 +30,8 @@ Retention Policies: Data is kept only for as long as necessary to fulfill the re
 
 The LISS panel data collection and management processes are regularly reviewed by ethical review boards. These boards ensure that all ethical guidelines and legal requirements are met. The processes are subject to regular audits to ensure ongoing compliance with ethical standards and data protection laws.
 
+The LISS panel data complies with ethical requirements through a comprehensive approach to privacy, informed consent, and data security. By ensuring informed consent, employing robust anonymization and pseudonymization techniques, and implementing stringent data security measures, the LISS panel maintains the highest ethical standards in its data collection and management practices. Regular ethical reviews and audits further ensure that these practices remain in compliance with current legal and ethical guidelines, thereby protecting the rights and privacy of participants while enabling valuable social science research.
+
 # Participant Rights
 
 Right to Access: Participants have the right to access their data and understand how it is being used.
@@ -38,5 +40,3 @@ Right to Rectification: Participants can request corrections to any inaccuracies
 
 Right to Erasure: Participants can request the deletion of their data if they withdraw from the study or if the data is no longer necessary for the research objectives.
 Conclusion
-
-The LISS panel data complies with ethical requirements through a comprehensive approach to privacy, informed consent, and data security. By ensuring informed consent, employing robust anonymization and pseudonymization techniques, and implementing stringent data security measures, the LISS panel maintains the highest ethical standards in its data collection and management practices. Regular ethical reviews and audits further ensure that these practices remain in compliance with current legal and ethical guidelines, thereby protecting the rights and privacy of participants while enabling valuable social science research.
