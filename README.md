@@ -24,6 +24,7 @@ We recommend to follow the following step-by-step algorithm for those who want t
 1) Gain access to the LISS panel and request access to the data donation study.
 
 2) Run the scripts in the following order:
+   
 2.1) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_corestudies.Rmd - this script inputs raw data from the LISS core studies and saves its recoded and processed version. 
 2.2) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_whatsappdat.Rmd  - this script inputs raw data from the WhatsApp data donation study and saves its recoded and processed version. 
 2.3) .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_fulldata.Rmd - this script joins and cleans the data from 2 previously mentioned sripts. 
@@ -31,11 +32,13 @@ We recommend to follow the following step-by-step algorithm for those who want t
 
 All the studies require you to adjust input and output paths to your computer if you uploaded repository. Specify part to repository (.../DTD-donation) correctly in each script. They should handle saving data automatically. 
 
-3) To reproduce Study 1, run:
+3) To reproduce Study 1, run
+   
 3.1) .../DTD-donation/Study 1/Scripts/Analysis_script_1.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
 In the end, Save the resulting data as described in the script, as it will be needed for Study 2
 
-4) To reproduce Study 2, run:
+5) To reproduce Study 2, run:
+   
 4.1) .../DTD-donation/Study 2/Scripts/Analysis_script_2.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
 
 Postprocessing is by default done in the end of presented scripts. As a result, outputing tables are saved and provided to the reader.  
