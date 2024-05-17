@@ -1,4 +1,6 @@
-OThe study is approved by the Ethical Review Board of the Faculty of Social and Behavioural Sciences of Utrecht University. The approval is based on the documents sent by the researchers as requested in the form of the Ethics committee and filed under number 23-1850. The approval is valid through 01 March 2024. The approval of the Ethical Review Board concerns ethical aspects, as well as data management and privacy issues (including the GDPR). Empirical data from the LISS panel was used. A detailed information on the ethical requirements in the LISS panel is provided below:
+OThe study is approved by the Ethical Review Board of the Faculty of Social and Behavioural Sciences of Utrecht University. The approval is based on the documents sent by the researchers as requested in the form of the Ethics committee and filed under number 23-1850. The approval is valid through 01 March 2024. The approval of the Ethical Review Board concerns ethical aspects, as well as data management and privacy issues (including the GDPR). 
+
+Empirical data from the LISS panel was used. A detailed information on the ethical requirements in the LISS panel is provided below:
 _____
 
 # LISS Panel Ethics
