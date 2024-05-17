@@ -32,8 +32,7 @@ Retention Policies: Data is kept only for as long as necessary to fulfill the re
 
 # Ethical Review and Compliance
 
-The LISS panel data collection and management processes are regularly reviewed by ethical review boards. These boards ensure that all ethical guidelines and legal requirements are met.
-Regular Audits: The processes are subject to regular audits to ensure ongoing compliance with ethical standards and data protection laws.
+The LISS panel data collection and management processes are regularly reviewed by ethical review boards. These boards ensure that all ethical guidelines and legal requirements are met. The processes are subject to regular audits to ensure ongoing compliance with ethical standards and data protection laws.
 
 # Participant Rights
 
