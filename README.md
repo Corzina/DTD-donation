@@ -8,7 +8,7 @@ In Study 2, we aim to identify the most effective predictive modeling approach f
 
 ___
 
-#Information about the data
+# Information about the data
 
 For Study 1, we utilize data from the LISS panel, a probability-based online household panel of the general population in the Netherlands, and data from the WhatsApp Data Donation project. Our study uses data from the 2023 waves of the LISS panel. More particularly, we use 1) LISS Core Study 4: Social Integration and Leisure, 2) LISS Core Study 7: Personality, 3) LISS Core Study 8: Politics and Values, 4) LISS Core background variables: Household Box. They are described in more details in the postprocessing/data folders in the attached tables. Described data is needed to run the analysis.
 
@@ -17,7 +17,7 @@ The WhatsApp Data Donation project, another data source incorporated in our rese
 For study 2, we use simulated data, which however uses data from the study 1 in a simulation process. It is provided in the Study 2 folder, but reader will not be able to simulate it himself unless he has access to the data utlizied in study 1. He will be, however, be able to run the analysis on the provided data. 
 ___
 
-#Analysis Guide
+# Analysis Guide
 
 We recommend to follow the following step-by-step algorithm for those who want to fully reproduce our study:
 
