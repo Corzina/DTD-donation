@@ -1,8 +1,8 @@
-To run the analysis, the following is required.
+To run the analysis, the following were used and required to reproduce the results.
 
-1) R version 4.3.1 (2023-06-16 ucrt) -- "Beagle Scouts"
-2) Rstudio version (2023.9.1.494), Build 494 "Desert Sunflower" Release (cd7011dc, 2023-10-16) for Windows
-3) A full list of packages is provided below in a vector with the version numbers:
+1) R version 4.3.1 (2023-06-16 ucrt) -- "Beagle Scouts". Older and newer versions also should work fine.
+2) Rstudio version (2023.9.1.494), Build 494 "Desert Sunflower" Release (cd7011dc, 2023-10-16) for Windows. Older and newer versions also should work fine.
+3) A number of R packages, provided below in a vector with the version numbers:
 
 packages <- c(
   "e1071 1.7-14",    "Metrics 0.1.4",   "boot 1.3-28.1",
