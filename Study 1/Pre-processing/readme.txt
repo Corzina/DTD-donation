@@ -6,7 +6,7 @@ To obrain data, reader should:
 
 2) personally conract Stein Jongerius (stein.jongerius@centerdata.nl) from centerdata to request WhatsApp data, as it is not made publicly available yet. 
 
-All the data, including donated DDPs, should be downloaded placed in the following folder: "...\DTD-donation\Study 1\Data" 
+All the data, including donated DDPs, should be downloaded placed in the following folder: ".../DTD-donation/Study 1/Data" 
 
 A detailed overview of what should be the part of the data is avaiable in the codebooks here: https://www.dataarchive.lissdata.nl/study-units/view/1
 
@@ -22,7 +22,7 @@ Make sure to check, upload and unzip (if needed) the following files from relate
 
 Original names of the raw datasets can be kept. Scripts will be able to preprocess it and store the output needed for further steps. Make sure that you follow subsequence described in readme in the root folder, as othervise needed data will be missing.
 
-Next, for the WhatsApp data, make sure to request, get and upload the following files in the ".../Study 1/Data/..." folder:
+Next, for the WhatsApp data, make sure to request, get and upload the following files in the ".../DTD-donation/Study 1/Data/" folder:
 
 1) Main Data Donation file - L_Datadonation_main_1.0p.sav
 
