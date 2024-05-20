@@ -18,7 +18,7 @@ Make sure to check, upload and unzip (if needed) the following files from relate
 
 Original names of the raw datasets can be kept. Scripts will be able to preprocess it and store the output needed for further steps. Make sure that you follow subsequence described in readme in the root folder, as othervise needed data will be missing.
 
-# Obtain WhatsApp donated data
+# Obtain WhatsApp Donated Data
 
 To obrain WhatsApp data, reader should personally contact Stein Jongerius (stein.jongerius@centerdata.nl) to request it, as it is not made publicly available yet. For the WhatsApp data, make sure to request, get and upload the following files, including donated DDPs, in the ".../DTD-donation/Study 1/Data/" folder:
 
