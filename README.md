@@ -21,7 +21,7 @@ ___
 
 We recommend to follow the following step-by-step algorithm for those who want to fully reproduce our study:
 
-1) Gain access to the LISS panel and request access to the data donation study. Request and store the raw data in the correct folder, as described in /Pre-processing/Readme.txt
+1) Gain access to the LISS panel and request access to the data donation study. Request and store the raw data in the correct folder, as described in .../Pre-processing/Readme.txt
 
 2) Run the scripts in the following order:
    
