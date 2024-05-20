@@ -1,0 +1,1 @@
+The following code is solely needed to complile tables for the Appendix as well as present a descriptions of the utilized parameters and their sources. Description for the variables presented in the tables is publicly available in the codebooks on the LISS panel website.

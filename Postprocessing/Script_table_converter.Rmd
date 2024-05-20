@@ -1,0 +1,26 @@
+---
+title: "Data_Description"
+output: html_document
+date: "2024-05-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Save the descriptive tables for Appendix
+
+```{r}
+library(readxl)
+library(stargazer)
+
+Table_QuestData <- read_excel("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data Archive/Postprocessing/data/Table_QuestData.xlsx")
+Table_wording <- read_excel("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data Archive/Postprocessing/data/Table_wording.xlsx")
+```
+
+Now, convert those tables in LaTeX
+
+```{r}
+stargazer(Table_QuestData, type = "latex", title = "Questionnaire Data", summary = FALSE, out = "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data Archive/Postprocessing/output/Table_QuestData.tex")
+stargazer(Table_wording, type = "latex", title = "Questionnaire Data", summary = FALSE, out = "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data Archive/Postprocessing/output/Table_wording.tex")
+```
