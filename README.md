@@ -27,7 +27,7 @@ We recommend to follow the following step-by-step algorithm for those who want t
 
 2.4. .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_DTD_preprocessing.Qmd - This script parses DDPs, saving actual number of contacts in the files available to reader.
 
-All the scripts require you to **adjust input and output paths** on your computer. You are required to specify path to repository (.../DTD-donation) correctly in the beginning and end of each script, depending on where you want to store the data. 
+All the scripts require you to **adjust input and output paths** on your computer. Thus, you need to specify path to a folder (.../DTD-donation) correctly in the beginning and end of each script, depending on where you want to store raw and processed data. 
 
 3) To reproduce the study, then run:
    
