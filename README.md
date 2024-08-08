@@ -31,7 +31,7 @@ All the scripts require you to **adjust input and output paths** on your compute
 
 3) To reproduce the study, then run:
    
-3.1. .../DTD-donation/Study 1/Scripts/Analysis_script.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
+3.1. .../DTD-donation/Study 1/Scripts/Analysis_script.Rmd - do not forget to adjust input paths.
 
 4) Postprocessing is by default done in the end of presented scripts. As a result, outputing tables are saved and provided to the reader.  
 
