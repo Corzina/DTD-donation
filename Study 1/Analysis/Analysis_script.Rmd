@@ -1,0 +1,628 @@
+---
+title: "Analysis_script_part1"
+output: html_document
+date: "2024-02-16"
+---
+
+## Load packages and data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+load all variables
+
+```{r}
+#install.packages("margins")
+library(margins)
+library(tidyverse)
+library(dplyr)
+library(haven)
+library(psych)
+library(mixtools)
+library(MASS)
+library(nnet)
+library(stargazer)
+library(xtable)
+```
+
+
+```{r}
+df <- read.csv("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_full_trim.csv", header=TRUE)
+DDPs <- read.csv("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/parsed_contacts.csv", header=TRUE)
+```
+
+### Preprocessing
+
+#### Link DDP to the main database
+
+```{r}
+df[1] <- NULL
+DDPs[1] <- NULL
+
+# use AccountPackageID to link "contacten" and "groepen" columns from DDPs to df
+df$AccountPackageID <- as.character(df$AccountPackageID)
+DDPs$AccountPackageID <- as.character(DDPs$AccountPackageID)
+
+# if empty, encode as NA
+df$AccountPackageID[df$AccountPackageID == ""] <- NA
+DDPs$AccountPackageID[DDPs$AccountPackageID == ""] <- NA
+
+df <- df %>%
+  left_join(DDPs %>% dplyr::select(AccountPackageID, contacten, groepen), by = "AccountPackageID")
+```
+
+## Part 1: Empirical Logistic Models
+
+### Binary logistic regressions
+
+#### Model specification
+
+For partip pred - exclude screened out.
+for bias red - include them.
+
+Consider hierachical appr - firstly knowledge, then knowledge + values, them overall.
+
+```{r}
+# no-controls
+mod1_1 <- glm(donators ~ QA5 + QA10a + QA7 + alt_chat_use, 
+             data = df, 
+             family = binomial(link = "logit"))
+summary(mod1_1)
+
+mod1_2 <- glm(donators ~ altruism + cs22o283 + cp23o019, 
+             data = df, 
+             family = binomial(link = "logit"))
+summary(mod1_2)
+
+mod1_3 <- glm(donators ~ openess + extrov + neurot + conscient + agreab, 
+             data = df, 
+             family = binomial(link = "logit"))
+summary(mod1_3)
+
+mod2_1 <- glm(donators ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + cs22o283 + cp23o019 + openess + extrov + neurot + conscient + agreab, 
+             data = df, 
+             family = binomial(link = "logit"))
+summary(mod2_1)
+
+mod2_2 <- glm(donators ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + cs22o283 + cp23o019 + openess + extrov + neurot + conscient + agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, 
+             data = df, 
+             family = binomial(link = "logit"))
+summary(mod2_2)
+```
+
+Calculate Pseudo-R2
+
+```{r}
+# Log-likelihood of the null model
+ll_null <- logLik(update(mod2_2, ~ 1))
+
+# Log-likelihood of the full model
+ll_full <- logLik(mod2_2)
+
+# McFadden's R^2
+R2_McFadden <- 1 - (as.numeric(ll_full) / as.numeric(ll_null))
+R2_McFadden
+```
+
+
+#### Odds ratios
+
+```{r}
+# Get coefficient estimates and standard errors
+coef <- coef(mod2_2)
+std_err <- summary(mod2_2)$coefficients[, "Std. Error"]
+
+# Calculate Wald test statistic and p-values
+wald_stat <- coef / std_err
+p_values <- 2 * (1 - pnorm(abs(wald_stat)))
+
+# Calculate odds ratios
+odds_ratios <- exp(coef)
+format(odds_ratios, scientific = FALSE)
+
+# Calculate 95% confidence intervals
+ci_lower <- confint(mod2_2)[,1]
+ci_upper <- confint(mod2_2)[,2]
+
+# Create a data frame with the results
+results <- data.frame(coef, std_err, wald_stat, p_values, odds_ratios, ci_lower, ci_upper)
+
+# convert p_values column from e^(-) to a classical notation
+results$p_values <- as.numeric(format(results$p_values, scientific = FALSE))
+
+# round all cols up to 4 digits
+results <- round(results, 4)
+
+# save rownames as a "variable" column, make it go firts
+
+results$factor <- rownames(results)
+results <- results[, c(8, 1:7)]
+
+# delete rownames
+rownames(results) <- NULL
+results
+```
+
+
+#### Marginal effects
+
+The AMEs provide insights into the expected change in the probability of the outcome variable for a one-unit change in a predictor variable, averaged over all observations in the dataset.
+
+```{r}
+ame <- margins(mod2_2)
+test <- summary(ame)
+
+# now, attach cols AME and SE to the results table. use factor column presented in both df to match them
+
+typeof(results$factor)
+results <- merge(results, test, by = "factor")
+results
+```
+
+### Multinomial logistic regressions
+
+#### Model specification
+
+```{r}
+# create df_nsc, where you drop rows with status == "screened out"
+df_nsc <- df %>%
+  filter(status != "screened_out")
+
+# get the model
+mod_mul <- multinom(status ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + 
+    belbezig, 
+    data = df_nsc)
+summary(mod_mul)
+```
+
+
+```{r}
+# Log-likelihood of the null model
+null_model <- update(mod_mul, . ~ 1)
+ll_null <- logLik(null_model)
+
+# Log-likelihood of the full model
+ll_full <- logLik(mod_mul)
+
+# McFadden's R^2
+R2_McFadden <- 1 - (as.numeric(ll_full) / as.numeric(ll_null))
+R2_McFadden
+```
+
+
+#### Significance
+
+```{r}
+# Get coefficient estimates and standard errors
+coef <- summary(mod_mul)$coefficients*(-1)
+std_err <- summary(mod_mul)$standard.errors
+
+# Calculate Wald test statistic and p-values
+wald_stat <- coef / std_err
+p_values <- 2 * (1 - pnorm(abs(wald_stat)))
+
+# Calculate odds ratios
+odds_ratios <- exp(coef)
+format(odds_ratios, scientific = FALSE)
+
+# Calculate 95% confidence intervals
+ci_lower <- exp(coef - 1.96 * std_err)
+ci_upper <- exp(coef + 1.96 * std_err)
+```
+
+Significance
+
+```{r}
+# Get coefficient estimates and standard errors
+#coef <- coef(mod_mul)
+#std_err <- summary(mod_mul)$standard.errors
+```
+
+Now, lets create a data frame with the results
+
+```{r}
+test <- list(coef, std_err, wald_stat, p_values, odds_ratios, ci_lower, ci_upper)
+
+# Define a function to transform each matrix
+transform_element <- function(element) {
+  coef_table <- t(element)
+  factor <- rownames(coef_table)
+  rownames(coef_table) <- NULL
+  coef_table <- cbind(factor, coef_table)
+  coef_df <- as.data.frame(coef_table)
+  
+  # Use generic column names for pivot_longer
+  colnames(coef_df) <- c("factor", "non_compliers", "non_donators", "non_respondents")
+  
+  long_coef_df <- coef_df %>%
+    pivot_longer(cols = c(non_compliers, non_donators, non_respondents), 
+                 names_to = "Group", 
+                 values_to = "Coefficient")
+  long_coef_df <- long_coef_df[, c(2, 1, 3)]
+  long_coef_df <- long_coef_df[order(long_coef_df$Group), ]
+  
+  return(long_coef_df)
+}
+
+# Apply the transformation function to each element in the test list
+transformed_test <- lapply(test, transform_element)
+
+# Print the transformed results for the first element as an example
+print(transformed_test[[1]])
+```
+
+make them normal
+
+```{r}
+# Extract the full data frame from the first element
+full_df <- transformed_test[[1]]
+
+# Extract the third column from each of the remaining data frames
+# Initialize a list to store the third columns
+third_columns <- list()
+
+for (i in 2:length(transformed_test)) {
+  сool <- transformed_test[[i]]
+  third_column <- сool[, 3, drop = FALSE] # Extract the third column
+  colname <- colnames(сool)[3] # Get the name of the third column
+  colnames(third_column) <- colname # Rename the column
+  third_columns[[i - 1]] <- third_column # Store in list
+}
+
+# Combine the third columns into a single data frame
+combined_third_columns <- bind_cols(third_columns)
+
+# Combine the full data frame with the combined third columns
+final_table <- bind_cols(full_df, combined_third_columns)
+colnames(final_table) <- c("group", "predictor", "coef", "std_err", "wald_stat", "p_values", "odds_ratios", "ci_lower", "ci_upper")
+
+# convert cols 3-9 to numeric
+final_table[,3:9] <- lapply(final_table[,3:9], as.numeric)
+
+# round cols 3-7 to 4 digits
+test <- round(final_table[,3:7], 4)
+final_table[,3:7] <- test
+final_table <- final_table[,1:7]
+final_table
+```
+
+#### Marginal Effects
+
+```{r}
+# select non-compliers and donators
+filtered_df1 <- df %>%
+  filter(status %in% c("non_compliers", "donators"))
+filtered_df2 <- df %>%
+  filter(status %in% c("non_donators", "donators"))
+filtered_df3 <- df %>%
+  filter(status %in% c("non_respondents", "donators"))
+
+mod3_1 <- glm(donators ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + cs22o283 + cp23o019 + openess + extrov + neurot + conscient + agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, 
+             data = filtered_df1, 
+             family = binomial(link = "logit"))
+mod3_2 <- glm(donators ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + cs22o283 + cp23o019 + openess + extrov + neurot + conscient + agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, 
+             data = filtered_df2, 
+             family = binomial(link = "logit"))
+mod3_3 <- glm(donators ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + cs22o283 + cp23o019 + openess + extrov + neurot + conscient + agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, 
+             data = filtered_df3, 
+             family = binomial(link = "logit"))
+
+ame1 <- margins(mod3_1)
+ame2 <- margins(mod3_2)
+ame3 <- margins(mod3_3)
+test1 <- summary(ame1)
+test2 <- summary(ame2)
+test3 <- summary(ame3)
+
+# create "group" column for test1-test3 objects specifying non_compliers, non_donators, non_respondents
+
+test1$group <- "non_compliers"
+test2$group <- "non_donators"
+test3$group <- "non_respondents"
+colnames(test1)[1] <- c("predictor")
+colnames(test2)[1] <- c("predictor")
+colnames(test3)[1] <- c("predictor")
+```
+
+Ok, now attach it to final_table
+
+```{r}
+# merge test objects - so that form 3 tables 17x8 we get one table 51x8
+test <- rbind(test1, test2, test3)
+test <- test[, c(1:3, 8)]
+
+# use columns "group" and "predictor" from test object to merge them with final_table
+
+final_table <- merge(final_table, test, by = c("group", "predictor"), all = TRUE)
+
+# convert cols to numeric
+final_table[,7:9] <- lapply(final_table[,7:9], as.numeric)
+
+# round cols to 4 digits
+final_table[,7:9] <- round(final_table[,7:9], 4)
+final_table
+```
+
+### Ordinal logistic regressions
+
+#### Model specification
+
+```{r}
+df$status <- factor(df$status, levels = c("non_respondents", "non_compliers", "non_donators", "donators"))
+
+mod4 <- polr(status ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + cs22o283 + cp23o019 + openess + extrov + neurot + conscient + agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, 
+             data = df, 
+             Hess = TRUE)
+summary(mod4)
+```
+#### Odds ratios
+
+```{r}
+# Extract the coefficients
+coefficients <- coef(mod4)
+# Extract the standard errors
+standard_errors <- sqrt(diag(vcov(mod4)))
+# calculate odds ratios
+odds_ratios <- exp(coefficients)
+# calculate p-values using t-value
+p_values <- 2 * pt(abs(coefficients / standard_errors), df = mod4$df.residual, lower.tail = FALSE)
+p_values
+```
+
+#### Marginal Effects
+
+Not included in the paper
+
+## Graphs
+
+My idea is to make CI plots for the binary logistic regressions and bar plots for the ordinal logistic regression.
+
+### Binary logistic regressions
+
+mod2_2 contains model output. Lets use them to calculate CI for each predictor
+
+```{r}
+# Calculate the confidence intervals
+conf_intervals <- confint(mod2_2)
+
+### prepare the data ###
+# Get coefficients and their names
+coef_df <- data.frame(
+  term = names(coef(mod2_2)),
+  estimate = coef(mod2_2),
+  conf.low = conf_intervals[, 1],
+  conf.high = conf_intervals[, 2]
+)
+
+# Remove the intercept for better clarity in plotting
+coef_df <- coef_df[coef_df$term != "(Intercept)", ]
+
+# Change their names for better readability
+coef_df$term <- c("Smartphone Skills", "WhatsApp Usage", "Perceived Concerns", "Secure Platforms", "Altruism", "SC Satisfaction", "Trust Question", "Openness", "Extroversion", "Neuroticism", "Conscientiousness", "Agreeableness", "Gender", "Age", "Net Income", "Education", "Employment")
+
+# Convert 'term' column to factor with specified levels to preserve order
+coef_df$term <- factor(coef_df$term, levels = rev(coef_df$term))
+
+# Create the CI plot
+test <- ggplot(coef_df, aes(x = term, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +  # Add red line at y = 0
+  coord_flip() +  # Flip coordinates for better readability
+  labs(x = "Predictors",
+       y = "Coefficient Estimate") +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "serif")  # Change font to Times New Roman
+  )
+
+test
+ggsave(test, filename = "CI_plot1.png")
+```
+
+### Multinomial logistic regression
+
+We want to get the similar graph for multinomial logit, saved in mod_mul. It is a model output got with  multinom() function
+
+```{r}
+# Calculate the confidence intervals
+conf_intervals <- confint(mod_mul)
+conf_intervals
+
+# convert conf_intervals into 3x18 matrix
+test <- matrix(conf_intervals, nrow = 3, byrow = TRUE)
+
+### prepare the data ###
+# Get coefficients and their names
+```
+
+## Saving Output
+
+```{r}
+results_bin <- results[,c(1:3,5:6,9:10)]
+results_mult <- final_table[,c(1:4, 6:9)]
+```
+
+Lets reorder them
+
+```{r}
+results_bin[,1]
+
+# Define the desired order
+desired_order <- c("QA5", "QA10a", "QA7", "alt_chat_use", "altruism", "cp23o019", "cs22o283", "openess", "extrov", "neurot", "conscient", "agreab", "geslacht", "gebjaar_nm", "nettocat","oplcat_bin", "belbezig")
+
+# Reorder the rows based on the desired order
+results_bin <- results_bin %>%
+  arrange(match(factor, desired_order))
+
+test1 <- results_mult[1:18,] %>% # drop if predictor == (Intercept)
+  filter(predictor != "(Intercept)") %>%
+  arrange(match(predictor, desired_order))
+test2 <- results_mult[19:36,] %>% # drop if predictor == (Intercept)
+  filter(predictor != "(Intercept)") %>%
+  arrange(match(predictor, desired_order))
+test3 <- results_mult[37:54,] %>% # drop if predictor == (Intercept)
+  filter(predictor != "(Intercept)") %>%
+  arrange(match(predictor, desired_order))
+
+# cbind tests again
+results_mult <- rbind(test1, test2, test3)
+
+# results_bin round 2 last columns up to 4 digits
+results_bin[,6:7] <- round(results_bin[,6:7], 4)
+```
+
+Now, lets save them
+
+```{r}
+# print the tables in latex WITHOUT SUMMARISING THEM, JUST THE TABLES
+xt <- xtable(results_bin)
+digits(xt) <- 4
+print(xt, type = "latex")
+output_bin <- capture.output(print(xt, type = "latex"))
+writeLines(output_bin, "results_bin.tex")
+
+xt <- xtable(results_mult)
+digits(xt) <- 4
+print(xt, type = "latex")
+output_mult <- capture.output(print(xt, type = "latex"))
+writeLines(output_mult, "results_mult.tex")
+```
+
+
+## Part 2: BIas Identification
+
+
+```{r}
+mcon_1 <- lm(contacten ~ QA5 + QA7  + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab, data = df)
+mcon_2 <- lm(contacten ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab, data = df)
+mcon_3 <- lm(contacten ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, data = df)
+mchat_1 <- lm(groepen ~ QA5 + QA7 + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab, data = df)
+mchat_2 <- lm(groepen ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab, data = df)
+mchat_3 <- lm(groepen ~ QA5 + QA10a + QA7 + alt_chat_use + altruism + 
+    cs22o283 + cp23o019 + openess + extrov + neurot + conscient + 
+    agreab + geslacht + gebjaar_nm + nettocat + oplcat_bin + belbezig, data = df)
+summary(mcon_3)
+summary(mchat_3)
+```
+
+### Correlation
+
+```{r}
+cor(df_nsc$contacten, df_nsc$groepen, use = "complete.obs")
+```
+
+### T-tests
+
+Lets use model to estimate differences in values for donators, non-donators, and types of non-donators
+
+```{r}
+# first, save predicted values
+
+df_nsc$predicted_con <- predict(mcon_3, type = "response", newdata = df_nsc)
+df_nsc$predicted_chat <- predict(mchat_3, type = "response", newdata = df_nsc)
+
+# use status column to compare whether means for predicted values differ between the groups
+
+df_nsc %>% 
+  group_by(status) %>% 
+  summarise(mean_con = mean(predicted_con), mean_chat = mean(predicted_chat), n = n())
+
+# now, check whether these differences are significant
+# implement parivise t-tests to compare means between the groups for predicted_con
+
+# Perform pairwise t-tests
+pairwise_t_test_results_1 <- pairwise.t.test(df_nsc$predicted_con, df_nsc$status, p.adjust.method = "bonferroni")
+pairwise_t_test_results_2 <- pairwise.t.test(df_nsc$predicted_chat, df_nsc$status, p.adjust.method = "bonferroni")
+
+# Print results
+print(pairwise_t_test_results_1)
+print(pairwise_t_test_results_2)
+```
+
+
+```{r}
+# Load necessary packages
+library(dplyr)
+
+# Assume 'df_nsc' and the models 'mcon_3' and 'mchat_3' are already defined and fitted
+
+# Save predicted values
+df_nsc$predicted_con <- predict(mcon_3, type = "response", newdata = df_nsc)
+df_nsc$predicted_chat <- predict(mchat_3, type = "response", newdata = df_nsc)
+
+# Use status column to compare whether means for predicted values differ between the groups
+df_nsc %>% 
+  group_by(status) %>% 
+  summarise(mean_con = mean(predicted_con), mean_chat = mean(predicted_chat), n = n())
+
+# Custom function to perform pairwise t-tests and extract statistics
+pairwise_t_tests <- function(data, response, group) {
+  groups <- unique(data[[group]])
+  pairwise_results <- list()
+  
+  for (i in 1:(length(groups) - 1)) {
+    for (j in (i + 1):length(groups)) {
+      group1 <- groups[i]
+      group2 <- groups[j]
+      data1 <- data[data[[group]] == group1, response]
+      data2 <- data[data[[group]] == group2, response]
+      
+      t_test_result <- t.test(data1, data2)
+      test_stat <- t_test_result$statistic
+      p_value <- t_test_result$p.value
+      df <- t_test_result$parameter
+      
+      pairwise_results[[paste(group1, "vs", group2)]] <- list(
+        test_statistic = test_stat,
+        p_value = p_value,
+        degrees_of_freedom = df
+      )
+    }
+  }
+  
+  return(pairwise_results)
+}
+
+# Perform pairwise t-tests and extract statistics for predicted_con
+pairwise_results_con <- pairwise_t_tests(df_nsc, "predicted_con", "status")
+
+# Perform pairwise t-tests and extract statistics for predicted_chat
+pairwise_results_chat <- pairwise_t_tests(df_nsc, "predicted_chat", "status")
+
+# Print results
+print(pairwise_results_con)
+print(pairwise_results_chat)
+```
+
+
+## Save the output
+
+```{r}
+suptab <- stargazer(mcon_1, mcon_2, mcon_3, mchat_1, mchat_2, mchat_3, type = "latex", title = "OLS Results", summary = FALSE)
+suptab
+writeLines(suptab, "ols_results.tex")
+```
+
+## Save the data
+
+```{r}
+write.csv(df, "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_an2.csv")
+```
+
+```{r}
+sessionInfo()
+```
