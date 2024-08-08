@@ -7,7 +7,6 @@ _____
 
 The LISS (Longitudinal Internet Studies for the Social Sciences) panel data adheres to stringent ethical requirements to ensure privacy, informed consent, and data security.  Here’s a detailed description of how it complies with these ethical standards:
 
-
 Participant Information: Participants are thoroughly informed about the purpose of the study, the nature of the data being collected, the duration of their participation, and how the data will be used.
 
 Voluntary Participation: Participation in the LISS panel is entirely voluntary. Participants can choose to withdraw at any time without any consequences.
