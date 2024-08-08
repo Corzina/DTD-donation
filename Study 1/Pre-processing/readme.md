@@ -1,4 +1,4 @@
-# Obrain LISS Panel Core Studies Data
+# Obtain LISS Panel Core Studies Data
 
 I do not own the data used in the empirical part of the article. To obrain it, reader should get access to the LISS Core Studies panel data, as described at https://www.lissdata.nl/use-the-panel
 
