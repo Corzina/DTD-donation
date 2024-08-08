@@ -1,20 +1,14 @@
 # Introduction
 
-Following data archive encorporates everytihng needed to reproduce 2 studies.
-
-Study 1 is an empirical data analysis. In the first part of this study, we compare differences in medians between groups of non-respondents, non-compliers, non-contributors, and donators using Kruskal-Wallis tests, applying Bonferroni correction. Next, binary logistic models are employed to identify variables associated with higher data donation rates, allowing for the examination of mean differences and interaction effects among predictors. We then utilize multinomial logistic regression with donators as the reference category to model the relationships between different response categories, aiming to identify group-specific effects. To address potential sample size imbalances, we create a balanced sample through random sampling and trimming, ensuring robust and unbiased analysis.
-
-In Study 2, we aim to identify the most effective predictive modeling approach, using simulated DTD and survey data. We apply a variety of predictive models to both empirical and simulated datasets, enabling a comparative analysis of their performance in real-world and controlled scenarios. Initially, we run the models on empirical data, followed by generating simulated data based on key characteristics influencing model performance. This dual approach allows us to evaluate how closely the simulated data replicate real-world patterns. Finally, we compare the performance of these models on MAE and RMSE to determine which method provides the best predictive accuracy.
+Following data archive encorporates everytihng needed to reproduce analysis used in our paper: "Selectivity in Donated Digital Trace Data: Mechanisms of Nondonation at Different Stages of the Data Donation Process". In the first part of the study, we utilize binary logistic model to identify variables associated with higher data donation rates. We then utilize multinomial logistic regression with donators as the reference category to model the relationships between different response categories (non-respondents, non-compliers, non-contributors, and donators), aiming to identify group-specific effects. Then, we check whether 2 types of Digital Trace Data, number of contacts and number of group chats in WhatsApp, can be predicted with the same set of predictors, which allows us to identify confounders introducing nondonation bias. Finally, we examine differenes in predicted values for different types of non-donators, which allows us to assess size of the bias in donated data.  
 
 ___
 
 # Information About the Data
 
-For Study 1, we utilize data from the LISS panel, a probability-based online household panel of the general population in the Netherlands, and data from the WhatsApp Data Donation project. Our study uses data from the 2023 waves of the LISS panel. More particularly, we use 1) LISS Core Study 4: Social Integration and Leisure, 2) LISS Core Study 7: Personality, 3) LISS Core Study 8: Politics and Values, 4) LISS Core background variables: Household Box. They are described in more details in the postprocessing/data folders in the attached tables. Described data is needed to run the analysis.
+For our study, we utilize data from the LISS panel, a probability-based online household panel of the general population in the Netherlands. Our research uses data from the Wave 15 (2023) of the LISS Core studies. More particularly, we use 1) LISS Core Study 4: Social Integration and Leisure, 2) LISS Core Study 7: Personality, and 3) LISS Core background variables: Household Box. Variables used are described in more details in the postprocessing/data folders in the attached tables. 
 
-The WhatsApp Data Donation project, another data source incorporated in our research needed for both Study 1 and Study 2, involved 4,800 randomly selected panel members and collected data on device usage and phone activities in early 2023, with a focus on data donation behaviors. From this source, both DDPs and survey results were used, so reader should make sure they are available on the computer. 
-
-For study 2, we use simulated data, which however was simulated using the distributional characteristics of the data from the Study 1. Thus, to reproduce simulation process, full empirical data is required. Simulated data is provided in the Study 2 folder, but reader will not be able to simulate it himself unless he has access to the data utlizied in Study 1. He will, however, be able to run the analysis on the provided data. 
+The WhatsApp Data Donation study was also conducted on the LISS panel. It involved 4,800 randomly selected panel members and collected data on device usage and phone activities in early 2023, with a focus on data donation behaviors. From this source, both DDPs and survey results were used, so reader should make sure they are available on the computer. 
 ___
 
 # Analysis Guide
@@ -31,20 +25,15 @@ We recommend to follow the following step-by-step algorithm for those who want t
 
 2.3. .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_fulldata.Rmd - this script joins and cleans the data from 2 previously mentioned sripts. 
 
-2.4. .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_DTD_preprocessing.Qmd - Needed for study 2. This script parses DDPs, saving actual number of contacts in the files available to reader.
+2.4. .../DTD-donation/Study 1/Pre-processing/Scripts/Explore_script_DTD_preprocessing.Qmd - This script parses DDPs, saving actual number of contacts in the files available to reader.
 
-All the studies require you to adjust input and output paths to your computer if you uploaded repository. Specify part to repository (.../DTD-donation) correctly in each script. They should handle saving data automatically. 
+All the studies require you to adjust input and output paths to your computer. Specify part to repository (.../DTD-donation) correctly in the beginning and end of each script, depending on where you want to store the data. 
 
-3) To reproduce Study 1, run:
+3) To reproduce the study, then run:
    
-3.1. .../DTD-donation/Study 1/Scripts/Analysis_script_1.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
-In the end, Save the resulting data as described in the script, as it will be needed for Study 2
+3.1. .../DTD-donation/Study 1/Scripts/Analysis_script.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
 
-4) To reproduce Study 2, run:
-   
-4.1. .../DTD-donation/Study 2/Scripts/Analysis_script_2.Rmd - do not forget to adjust input paths, keeping in mind that you have uploaded repository correctly.
-
-5) Postprocessing is by default done in the end of presented scripts. As a result, outputing tables are saved and provided to the reader.  
+4) Postprocessing is by default done in the end of presented scripts. As a result, outputing tables are saved and provided to the reader.  
 
 
 
