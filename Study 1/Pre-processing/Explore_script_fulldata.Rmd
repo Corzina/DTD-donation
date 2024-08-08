@@ -1,0 +1,520 @@
+---
+title: "Explore_script_fulldata"
+output: html_document
+date: "2024-02-16"
+---
+
+## Load packages and data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(haven)
+library(psych)
+library(mice)
+```
+
+## Data wrangling
+
+### Data selection
+
+```{r}
+rm(nomem_encr, liss4, liss7, result_df, lisswhat)
+```
+
+load all variables
+
+```{r}
+df_whatapp <- read.csv("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_what.csv", header=TRUE)
+df_liss <- read.csv("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_liss.csv", header=TRUE)
+# Background
+lissback <- read_sav("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/lissback/avars_202309_EN_1.0p.sav")
+```
+
+### Data merging
+
+detach control variables
+
+```{r}
+df_whatapp <- df_whatapp[,-c(132:159)]
+```
+
+join dataframes, attach liss panels to a whats app study
+
+```{r}
+df_res <- df_whatapp %>% 
+  left_join(df_liss, by = "nomem_encr")
+```
+
+attach control variables
+
+```{r}
+df_res <- df_res %>% 
+  left_join(lissback, by = "nomem_encr")
+```
+
+### Processing
+
+save dataframe with non_respondents == 1 excluded
+
+```{r}
+#dfnor <- df[df$non_respondents != 1,]
+```
+
+Introduce alternative messenger variable
+
+```{r}
+df_res$alt_chat_use <- ifelse(df_res$QA10b != 7 | df_res$QA10c != 7, 1, 0) # 1 if alt messenger is used at least almost never, 0 otherwise
+```
+
+Split alt_chat_use into other_messenger and secure_messenger.
+
+```{r}
+df_res$secure_messenger <- df_res$alt_chat_use
+#df$alt_chat_use <- NULL
+df_res$other_messenger <- ifelse(nchar(as.character(df_res$QA10f_text)) > 0, 1, 0)
+```
+
+#### Fixing scales
+
+```{r}
+# if df_res$cp23o019 ==-9, then NA
+df_res$cp23o019[df_res$cp23o019 == -9] <- NA
+
+# if  df_res$nettocat == 13 or 14, then NA
+
+df_res$
+
+df_res$nettocat[df_res$nettocat == 13] <- NA
+df_res$nettocat[df_res$nettocat == 14] <- NA
+
+# if geslacht = 3, then NA
+
+df_res$geslacht[df_res$geslacht == 3] <- NA
+```
+
+#### Recoding
+
+If NA for Q11, then recode as 0
+
+```{r}
+df_res$QA11 <- ifelse(is.na(df_res$QA11), 0, df_res$QA11)
+```
+
+Recode age to include it
+
+```{r}
+df_res$gebjaar_nm <- 2023 - df_res$gebjaar 
+```
+
+Education recode
+
+```{r}
+df_res$oplcat_bin <- ifelse(df_res$oplcat %in% c(1, 2, 3), 0, 1)
+```
+
+Add Employment variable
+
+```{r}
+df_res$belbezig <- ifelse(df_res$belbezig %in% c(1, 2, 3), 1, 0)
+```
+
+#### Correctness Check
+
+Are everything encoded as needed?
+
+##### DV's
+
+```{r}
+df_res$df_res <- NULL
+
+table(df_res$donators)
+table(df_res$status)
+
+# recode status so that  1 is assigned to non-respondents, 2 is assigned to non-compliers, 3 is assigned to non-contributors, and 4 is assigned to donators, Screened out are marked as NA
+```
+
+##### Predictors
+
+```{r}
+table(df_res$QA5)
+table(df_res$QA10a)
+table(df_res$QA7)
+table(df_res$alt_chat_use)
+table(df_res$altruism)
+table(df_res$cp23o136)
+table(df_res$cs22o283)
+table(df_res$cp23o019)
+table(df_res$geslacht)
+table(df_res$gebjaar_nm)
+table(df_res$nettocat)
+table(df_res$oplcat_bin)
+table(df_res$belbezig)
+```
+
+select only data needed in analysis
+
+```{r}
+df_res_trim <- df_res %>% 
+  select(nomem_encr, donators, status, QA5, QA10a, QA7, alt_chat_use, altruism, cp23o136, cs22o283, cp23o019, geslacht, gebjaar_nm, nettocat, oplcat_bin, belbezig, agreab, extrov, conscient, neurot, openess)
+```
+
+#### Missing Data Handling
+
+-   Identify and visualize missing data patterns.
+
+```{r}
+#md.pattern(df_res_trim)
+
+## calculate number of missing values
+(2232*100)/4800
+
+## calculate number of distinct patterns of missing data
+n_distinct_missing <- nrow(md.pattern(df_res_trim))
+n_distinct_missing
+```
+Now, for the missing data, we will use the mice package to impute the missing data.
+
+```{r}
+#str(df_res_trim)
+# recode as ordinal, geslacht and nettocat 
+df_res_trim$geslacht <- as.ordered(df_res_trim$geslacht)
+df_res_trim$nettocat <- as.ordered(df_res_trim$nettocat)
+```
+
+```{r}
+imputed_data <- mice(df_res_trim, m = 5, method = 'pmm', seed = 500)
+imputed_data$imp
+df_res_trim <- complete(imputed_data)
+rm(imputed_data)
+```
+
+Attach step to data without missingness
+
+```{r}
+df_res <- df_res %>%
+  mutate(step = case_when(
+    non_respondents == 1 ~ 1,
+    non_compliers == 1 ~ 2,
+    non_donators == 1 ~ 3,
+    donators == 1 ~ 4,
+    screened_out == 1 ~ NA_real_,
+    TRUE ~ as.numeric(status)  # Assuming 'status' is numeric; if it's a factor or character, use as.numeric(as.character(status))
+  ))
+
+# if status == screened_out, then step == NA
+
+df_res$step[df_res$status == "screened_out"] <- NA
+df_res_trim$step <- df_res$step
+
+# if step == NA, then use is.na to make donators NA
+
+df_res_trim$donators[is.na(df_res_trim$step)] <- NA
+```
+
+also, attach AccountPackageID
+
+```{r}
+# use nomem_encr to attach AccountPackageID from df_res to df_res_trim
+
+df_res_trim <- left_join(df_res_trim, df_res %>% select(nomem_encr, AccountPackageID), by = "nomem_encr")
+```
+
+## Exploratory Analysis
+
+### Descriptive Analysis
+
+-   Calculate summary statistics like mean, median, and standard deviation.
+
+```{r}
+describe(df_res_trim)
+```
+
+## Univariate Analysis for controls
+
+```{r}
+hist_plot_all <- ggplot(df_res, aes(x = leeftijd, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Age",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  scale_x_continuous(breaks = seq(0, 100, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 100, by = 5)) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+dfper <- data.frame(df_res$leeftijd, as.factor(df_res$status))
+table(dfper)
+prop.table(table(dfper),1)
+probs <- data.frame(prop.table(table(dfper),1))
+probs$Freq <- probs$Freq*100
+colnames(probs) <- c("leeftijd", "status", "Freq")
+colnames(probs)
+probs
+```
+
+```{r}
+hist_plot_all <- ggplot(probs, aes(x = leeftijd, y = Freq, fill = status)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Age",
+    y = "Percentage"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db", "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers", "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents"))  +
+  scale_y_continuous(labels = scales::percent_format(scale = 1), expand = c(0, 0)) +
+  theme_minimal()
+hist_plot_all
+```
+
+
+```{r}
+filtered_df <- df_res[df_res$sted > -1, ]
+
+hist_plot_all <- ggplot(filtered_df, aes(x = sted, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Urbanisation (1 - strongly urban)",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+filtered_df <- df_res[df_res$brutoink < 15000, ]
+
+hist_plot_all <- ggplot(filtered_df, aes(x = brutoink, fill = factor(status))) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Donation Status",
+    x = "Income",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+hist_plot_all <- ggplot(df_res, aes(x = oplzon, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Education (1 - primary, 6 - WED)",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+dfper <- data.frame(df_res$oplzon, as.factor(df_res$status))
+table(dfper)
+prop.table(table(dfper),1)
+probs <- data.frame(prop.table(table(dfper),1))
+probs$Freq <- probs$Freq*100
+colnames(probs) <- c("oplzon", "status", "Freq")
+colnames(probs)
+probs
+```
+
+```{r}
+hist_plot_all <- ggplot(probs, aes(x = oplzon, y = Freq, fill = status)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Education (1 - primary, 6 - WED)",
+    y = "Percentage"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db", "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers", "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents"))  +
+  scale_y_continuous(labels = scales::percent_format(scale = 1), expand = c(0, 0)) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+hist_plot_all <- ggplot(df_res, aes(x = geslacht, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Sex (1 - male, 2 - female 3 - other)",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+hist_plot_all
+```
+
+## Univariate analysis for the independent variables
+
+```{r}
+hist_plot_all <- ggplot(df_res, aes(x = cp23o019, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Generalized Trust Question",
+    x = "(1 - can't be too careful; 10 - Most people can be trusted)",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+filtered_df <- df_res
+filtered_df$org_env_binary <- ifelse(filtered_df$org_env == "no connection", 0, 1)
+filtered_df$org_hum_binary <- ifelse(filtered_df$org_hum == "no connection", 0, 1)
+
+hist_plot_all <- ggplot(filtered_df, aes(x = org_hum_binary, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs( title = "Altruism Question")  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+
+hist_plot_all_2 <- ggplot(filtered_df, aes(x = org_env_binary, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs( title = "Altruism Question")  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+
+hist_plot_all
+hist_plot_all_2
+```
+
+## Exploratory Analysis (Screened-out respondents excluded)
+
+```{r}
+df_res_nosc <- df_res[df_res$status != "screened_out",]
+```
+
+### Descriptive Analysis
+
+```{r}
+describe(df_res)
+```
+
+### Univariate Analysis for all
+
+```{r}
+hist_plot_all <- ggplot(df_res_nosc, aes(x = leeftijd, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Age",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  scale_x_continuous(breaks = seq(0, 100, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 100, by = 5)) +
+  theme_minimal()
+hist_plot_all
+```
+
+
+```{r}
+dfper <- data.frame(df_res_nosc$leeftijd, as.factor(df_res_nosc$status))
+#table(dfper)
+#prop.table(table(dfper),1)
+probs <- data.frame(prop.table(table(dfper),1))
+probs$Freq <- probs$Freq*100
+colnames(probs) <- c("leeftijd", "status", "Freq")
+#colnames(probs)
+#probs
+```
+
+```{r}
+hist_plot_all <- ggplot(probs, aes(x = leeftijd, y = Freq, fill = status)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Age",
+    y = "Percentage"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db", "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers", "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents"))  +
+  scale_y_continuous(labels = scales::percent_format(scale = 1), expand = c(0, 0)) +
+  theme_minimal()
+hist_plot_all
+```
+
+
+```{r}
+hist_plot_all <- ggplot(df_res_nosc, aes(x = oplzon, fill = factor(status))) +
+  geom_histogram(binwidth = 0.5, alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Education (1 - primary, 6 - WED)",
+    y = "Frequency"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db",   "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers",   "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents")) +
+  theme_minimal()
+hist_plot_all
+```
+
+```{r}
+dfper <- data.frame(df_res_nosc$oplzon, as.factor(df_res_nosc$status))
+#table(dfper)
+#prop.table(table(dfper),1)
+probs <- data.frame(prop.table(table(dfper),1))
+probs$Freq <- probs$Freq*100
+colnames(probs) <- c("oplzon", "status", "Freq")
+#colnames(probs)
+#probs
+```
+
+```{r}
+hist_plot_all <- ggplot(probs, aes(x = oplzon, y = Freq, fill = status)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7) +
+  labs(
+    title = "Donation Status",
+    x = "Education (1 - primary, 6 - WED)",
+    y = "Percentage"
+  )  +
+  scale_fill_manual(values = c("donators" = "#FF5733", "non_compliers" = "#3498db", "non_donators" = "#27ae60", "screened_out" = "#f1c40f", "non_respondents" = "#95a5a6"),
+                    labels = c("donators" = "Donators", "non_compliers" = "Non-compliers", "non_donators" = "Non-donators", "screened_out" = "Screened out", "non_respondents" = "Non-respondents"))  +
+  scale_y_continuous(labels = scales::percent_format(scale = 1), expand = c(0, 0)) +
+  theme_minimal()
+hist_plot_all
+```
+
+
+```{r}
+rm(dfper, probs, hist_plot_all, hist_plot_all, lissback, filtered_df)
+```
+
+## Save the full dataset
+
+```{r}
+write.csv(df_res, "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_full.csv")
+write.csv(df_res_trim, "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_full_trim.csv")
+write.csv(df_res_nosc, "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_fullsc.csv")
+```
+
+clean environment
+
+```{r}
+rm(df_res, df_res_trim, df_res_nosc, df_liss, df_whatapp, hist_plot_all_2)
+```
+

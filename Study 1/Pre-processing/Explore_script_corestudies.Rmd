@@ -1,0 +1,291 @@
+---
+title: "Explore_script_corestudies"
+output: html_document
+date: "2024-01-23"
+---
+
+## Load packages and data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(haven)
+library(psych)
+```
+
+
+```{r}
+# Integration and Leisure
+liss4 <- read_sav("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/liss4/cs22o_EN_1.1p.sav")
+# Personality
+liss7 <- read_sav("C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/liss7/cp23o_EN_1.0p.sav")
+```
+
+## Data Wrangling, LISS 4
+
+### Data Selection & Cleaning
+
+-   Drop non-relevant variables, decrease dataframe width. 
+-   Check for and handle outliers, if any.
+-   Prepare joint dataframe for further analysis.
+
+```{r}
+# get index of variables
+which(names(liss4) == "cs22o028") # warm glow
+which(names(liss4) == "cs22o037") # warm glow
+which(names(liss4) == "cs22o534") # warm glow
+which(names(liss4) == "cs22o283") # soc contacts
+
+# select variables of interest
+liss4 <- liss4 %>% 
+  select(1, 3, 29:43, 343)
+
+```
+
+### Data Transformation
+
+```{r}
+# merge binary variables into categories
+
+org_hum <- apply(liss4[,3:7], 1, function(row) {
+  if (all(is.na(row))) {
+    return("None")
+  } else {
+    one_indices <- which(row == 1)
+    if (length(one_indices) == 0) {
+      return("None")
+    } else if (length(one_indices) == 1) {
+      return(names(row)[one_indices])
+    } else {
+      return("Mixed")
+    }
+  }
+})
+
+org_hum <- recode(org_hum, cs22o028 = "no connection", 
+                           cs22o029 = "donated money", 
+                           cs22o030 = "participated in an activity",
+                           cs22o031 = "member",
+                           cs22o032 = "performed voluntary work")
+liss4$org_hum <- org_hum
+
+org_mig <- apply(liss4[,8:12], 1, function(row) {
+  if (all(is.na(row))) {
+    return("None")
+  } else {
+    one_indices <- which(row == 1)
+    if (length(one_indices) == 0) {
+      return("None")
+    } else if (length(one_indices) == 1) {
+      return(names(row)[one_indices])
+    } else {
+      return("Mixed")
+    }
+  }
+})
+
+org_mig <- recode(org_mig, cs22o523 = "no connection", 
+                           cs22o524 = "donated money", 
+                           cs22o525 = "participated in an activity",
+                           cs22o526 = "member",
+                           cs22o527 = "performed voluntary work")
+liss4$org_mig <- org_mig
+
+org_env <- apply(liss4[,13:17], 1, function(row) {
+  if (all(is.na(row))) {
+    return("None")
+  } else {
+    one_indices <- which(row == 1)
+    if (length(one_indices) == 0) {
+      return("None")
+    } else if (length(one_indices) == 1) {
+      return(names(row)[one_indices])
+    } else {
+      return("Mixed")
+    }
+  }
+})
+
+org_env <- recode(org_env,  cs22o033 = "no connection", 
+                            cs22o034 = "donated money", 
+                            cs22o035 = "participated in an activity",
+                            cs22o036 = "member",
+                            cs22o037 = "performed voluntary work")
+
+liss4$org_env <- org_env
+```
+
+```{r}
+liss4$org_env_binary <- ifelse(liss4$org_env == "no connection", "No", "Yes")
+liss4$org_hum_binary <- ifelse(liss4$org_hum == "no connection", "No", "Yes")
+liss4$org_mig_binary <- ifelse(liss4$org_mig == "no connection", "No", "Yes")
+```
+
+```{r}
+liss4$altruism <- ifelse(liss4$org_hum_binary == "Yes" | liss4$org_env_binary == "Yes", 1, 0) # 1 if respondent participates in some form in a humanitarian or environmental organisations, 0 otherwise
+```
+
+## Data Wrangling, LISS 7
+
+### Data Selection & Cleaning
+
+```{r}
+# variables are ordered as follows: 
+# 1 - extroversion
+# 2 - Agreeableness
+# 3 - Neuroticism
+# 4 - Conscientiousness
+# 5 - Openness to new experience
+
+# get index of variables
+
+which(names(liss7) == "cp23o019")
+which(names(liss7) == "cp23o136")
+
+# select variables of interest
+liss7 <- liss7 %>% 
+  select(1, 3:4, 12:63, 110)
+
+```
+
+### Data Transformation
+
+```{r}
+BIG5 <- liss7[,5:54]
+
+extrov <- 20 + BIG5[,1] - BIG5[,6] + BIG5[,11] - BIG5[,16] + BIG5[,21] - BIG5[,26] + BIG5[,31] - BIG5[,36] + BIG5[,41] - BIG5[,46]
+agreab <- 14 - BIG5[,2] + BIG5[,7] - BIG5[,12] + BIG5[,17] - BIG5[,22] + BIG5[,27] - BIG5[,32] + BIG5[,37] + BIG5[,42] + BIG5[,47]
+conscient <- 14 + BIG5[,3] - BIG5[,8] + BIG5[,13] - BIG5[,18] + BIG5[,23] - BIG5[,28] + BIG5[,33] - BIG5[,38] + BIG5[,43] + BIG5[,48]
+neurot <- 38 - BIG5[,4] + BIG5[,9] - BIG5[,14] + BIG5[,19] - BIG5[,24] - BIG5[,29] - BIG5[,34] - BIG5[,39] - BIG5[,44] - BIG5[,49]
+openess <- 8 + BIG5[,5] - BIG5[,10] + BIG5[,15] - BIG5[,20] + BIG5[,25] - BIG5[,30] + BIG5[,35] + BIG5[,40] + BIG5[,45] + BIG5[,50]
+
+table(agreab)
+table(extrov)
+table(conscient)
+table(neurot)
+table(openess)
+
+liss7$agreab <- as.vector(agreab$cp23o021)
+liss7$extrov <- as.vector(extrov$cp23o020)
+liss7$conscient <- as.vector(conscient$cp23o022)
+liss7$neurot <- as.vector(neurot$cp23o023)
+liss7$openess <- as.vector(openess$cp23o024)
+
+rm(BIG5, agreab, extrov, conscient, neurot, openess)
+```
+
+
+## Data Format Inspection
+
+-   Inspect the data to understand its structure, variable names, and data types.
+
+```{r}
+str(liss4)
+str(liss7)
+```
+
+## Exploratory Analysis
+
+### Descriptive Analysis
+
+-   Calculate summary statistics like mean, median, and standard deviation.
+
+```{r}
+#describe(result_df)
+```
+
+### Univariate Analysis
+
+-   Visualize the distribution of each variable using histograms, density plots, or bar charts.
+
+#### Liss 4 
+checking if variables are applicable
+
+```{r}
+# Function to create a histogram for a given variable
+
+datagraph <- liss4[,3:17] %>% gather()
+datagraph$value <- factor(datagraph$value)
+str(datagraph)
+ggplot(datagraph, aes(x = value)) + 
+    geom_bar() + 
+    facet_wrap(~key, scales = "fixed") + 
+    theme_minimal()
+```
+
+```{r}
+datagraph <- liss4[,19:21] %>% gather()
+datagraph$value <- factor(datagraph$value)
+ggplot(datagraph, aes(x = value)) + 
+    geom_bar() + 
+    facet_wrap(~key, scales = "fixed") + 
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Liss 7 
+checking if variables are applicable
+
+```{r}
+datagraph <- liss7[,56:60] %>% gather()
+ggplot(datagraph, aes(x = value)) + 
+    geom_density(alpha = 0.5) + 
+    facet_wrap(~key, scales = "fixed") + 
+    theme_minimal()
+```
+
+```{r}
+ggplot(liss7, aes(x = cp23o019)) + 
+    geom_bar() + 
+    theme_minimal() +
+  labs(
+    title = "Generalized Trust Question",
+    x = "(1 - can't be too careful; 10 - Most people can be trusted)",
+    y = "Frequency"
+  )
+```
+
+## Data Merging
+
+-  Merge dataframes into one dataframe for further analysis.
+
+```{r}
+merged_df <- merge(liss4, liss7, by = "nomem_encr", all = TRUE)
+result_df <- merged_df
+rm(merged_df, datagraph)
+
+result_df$org_hum[result_df$org_hum == "None"] <- NA
+result_df$org_env[result_df$org_env == "None"] <- NA
+result_df$org_mig[result_df$org_mig == "None"] <- NA
+```
+
+```{r}
+ggplot(result_df, aes(x = cp23o019, fill = org_hum)) + 
+    geom_bar() + 
+    theme_minimal() +
+  labs(
+    title = "Generalized Trust by Altruism",
+    x = "Generalized Trust (1 - can't be too careful; 10 - Most people can be trusted)",
+    y = "Frequency"
+  )
+```
+
+```{r}
+ggplot(result_df, aes(x = cp23o019, fill = org_env_binary)) + 
+    geom_bar() + 
+    theme_minimal() +
+  labs(
+    title = "Generalized Trust by Altruism",
+    x = "Generalized Trust (1 - can't be too careful; 10 - Most people can be trusted)",
+    y = "Frequency"
+  )
+```
+
+## Export Data
+
+```{r}
+write.csv(result_df, "C:/Users/danch/OneDrive/2 Course MS/Thesis/Data/df_liss.csv")
+```
+
+
